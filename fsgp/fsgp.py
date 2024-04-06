@@ -6,6 +6,7 @@ import questionary
 from termcolor import colored
 import fsgp_routemodel.fsgp_routemodel as fsgp
 
+
 def validate_db_creds():
     answers = questionary.form(
         db_host=questionary.text("Database host:port", default=""),
@@ -47,7 +48,7 @@ def cmd_routemodel_import():
             auto_enter=False,
         ),
     ).ask()
-    track_data_filepath = answers['track_data_filepath']
+    track_data_filepath = answers["track_data_filepath"]
     confirm = answers["confirm"]
 
     if not confirm:
@@ -59,36 +60,32 @@ def cmd_routemodel_import():
 
 def cmd_routemodel_construct():
     answers = questionary.form(
-        route_name=questionary.text(
-            'Name of route'
-        ),
+        route_name=questionary.text("Name of route"),
         segment_data_filepath=questionary.path(
             "Path to segment data (json file)",
             default="",
             validate=lambda p: validate_path(p, ".json"),
         ),
-        segment_order=questionary.text(
-            "Order of track segments"
-        ),
-        num_loops=questionary.text(
-            "Number of loops"
-        ),
+        segment_order=questionary.text("Order of track segments"),
+        num_loops=questionary.text("Number of loops"),
         confirm=questionary.confirm(
             "Confirm import operation",
             default=False,
             auto_enter=False,
         ),
     ).ask()
-    segment_data_filepath = answers['segment_data_filepath']
-    segment_order = answers['segment_order']
-    num_loops = answers['num_loops']
-    route_name = answers['route_name']
+    segment_data_filepath = answers["segment_data_filepath"]
+    segment_order = answers["segment_order"]
+    num_loops = answers["num_loops"]
+    route_name = answers["route_name"]
     confirm = answers["confirm"]
 
     if not confirm:
         print(colored("fsgp routemodel constuctions cancelled", "red"))
     else:
-        fsgp.construct_route(segment_data_filepath, segment_order, int(num_loops), route_name)
+        fsgp.construct_route(
+            segment_data_filepath, segment_order, int(num_loops), route_name
+        )
         print(colored("fsgp routemodel constructed", "green"))
 
 
@@ -105,7 +102,7 @@ def cmd_routemodel_seed(db_user, db_password, db_host, db_name):
             auto_enter=False,
         ),
     ).ask()
-    route_file_path = answers['route_file_path']
+    route_file_path = answers["route_file_path"]
     confirm = answers["confirm"]
 
     if not confirm:
@@ -126,18 +123,18 @@ def route_model(db_user, db_password, db_host, db_name):
                 "Import Track Data",
                 "Construct Track Routemodel",
                 "Seed Database",
-                "Exit"
+                "Exit",
             ],
         ).ask()
 
-        if route_model_option == 'Import Track Data':
+        if route_model_option == "Import Track Data":
             cmd_routemodel_import()
-        elif route_model_option == 'Construct Track Routemodel':
+        elif route_model_option == "Construct Track Routemodel":
             cmd_routemodel_construct()
-        elif route_model_option == 'Seed Database':
+        elif route_model_option == "Seed Database":
             cmd_routemodel_seed(db_user, db_password, db_host, db_name)
         else:
-            break   
+            break
 
 
 if __name__ == "__main__":
