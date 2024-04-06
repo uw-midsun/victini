@@ -90,35 +90,35 @@ def route_json_to_gdf(route_file_path):
     return csv_filepath
 
 
-# *In progress*, copied from etl routemodel
-# def seed_from_csv(track_csv_filepath, db_user, db_password, db_host, db_name):
-#     file = Path(track_csv_filepath)
-#     if not file.is_file():
-#         raise FileNotFoundError("No file exists at the location specified")
-#     gdf = gpd.GeoDataFrame(pd.read_csv(file))
-#     gdf.fillna(np.nan).replace([np.nan], [None])
-#     gdf.index.name = "id"
+def seed_from_csv(track_csv_filepath, db_user, db_password, db_host, db_name):
+    file = Path(track_csv_filepath)
+    if not file.is_file():
+        raise FileNotFoundError("No file exists at the location specified")
+    gdf = gpd.GeoDataFrame(pd.read_csv(file))
+    gdf.fillna(np.nan).replace([np.nan], [None])
+    gdf = gdf.drop(columns=["Unnamed: 0"])
+    gdf.index.name = "id"
     
-#     engine = create_engine(
-#         f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}/{db_name}"
-#     )
+    engine = create_engine(
+        f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}/{db_name}"
+    )
 
-#     gdf.index += 1  # Making table 1-indexed
-#     if inspect(engine).has_table("routemodel"):
-#         row_len = pd.read_sql_query(sql="SELECT COUNT(*) FROM routemodel", con=engine)
-#         gdf.index += row_len.iloc[0, 0]
+    gdf.index += 1  # Making table 1-indexed
+    if inspect(engine).has_table("routemodelfsgp"):
+        row_len = pd.read_sql_query(sql="SELECT COUNT(*) FROM routemodelfsgp", con=engine)
+        gdf.index += row_len.iloc[0, 0]
+    
+    response = gdf.to_sql(
+        name="routemodelfsgp",
+        con=engine,
+        schema="public",
+        if_exists="append",
+        index=True,
+        method="multi",
+        dtype={"geo": Geometry("POINT", srid=4326), "street_name": String},
+    )
 
-#     response = gdf.to_sql(
-#         name="routemodel",
-#         con=engine,
-#         schema="public",
-#         if_exists="append",
-#         index=True,
-#         method="multi",
-#         dtype={"geo": Geometry("POINT", srid=4326), "street_name": String},
-#     )
-
-#     if gdf.shape[0] != response:
-#         raise SystemError("dataframe insertion failed")
-#     else:
-#         print("routemodel dataframe insertion success")
+    if gdf.shape[0] != response:
+        raise SystemError("dataframe insertion failed")
+    else:
+        print("routemodel dataframe insertion success")

@@ -54,7 +54,7 @@ def cmd_routemodel_import():
         print(colored("fsgp track data import cancelled", "red"))
     else:
         fsgp.import_track_segments(track_data_filepath)
-        print("fsgp track data imported")
+        print(colored("fsgp track data imported", "green"))
 
 
 def cmd_routemodel_construct():
@@ -89,12 +89,33 @@ def cmd_routemodel_construct():
         print(colored("fsgp routemodel constuctions cancelled", "red"))
     else:
         fsgp.construct_route(segment_data_filepath, segment_order, int(num_loops), route_name)
-        print("fsgp routemodel constructed")
+        print(colored("fsgp routemodel constructed", "green"))
 
 
 def cmd_routemodel_seed(db_user, db_password, db_host, db_name):
-    print(colored("NOT IMPLEMENTED", "red"))
-    pass
+    answers = questionary.form(
+        route_file_path=questionary.path(
+            "Path to route data (json file)",
+            default="",
+            validate=lambda p: validate_path(p, ".json"),
+        ),
+        confirm=questionary.confirm(
+            "Confirm import operation",
+            default=False,
+            auto_enter=False,
+        ),
+    ).ask()
+    route_file_path = answers['route_file_path']
+    confirm = answers["confirm"]
+
+    if not confirm:
+        print(colored("fsgp database seed cancelled", "red"))
+    else:
+        print("1) Parsing fsgp routemodel json format to csv format...")
+        csv_filepath = fsgp.route_json_to_gdf(route_file_path)
+        print("2) Seeding fsgp routemodel csv into database...")
+        fsgp.seed_from_csv(csv_filepath, db_user, db_password, db_host, db_name)
+        print(colored("fsgp database seed completed", "green"))
 
 
 def route_model(db_user, db_password, db_host, db_name):
@@ -115,11 +136,8 @@ def route_model(db_user, db_password, db_host, db_name):
             cmd_routemodel_construct()
         elif route_model_option == 'Seed Database':
             cmd_routemodel_seed(db_user, db_password, db_host, db_name)
-        elif route_model_option == 'Exit':
-            break
         else:
-            break
-        
+            break   
 
 
 if __name__ == "__main__":
@@ -129,6 +147,13 @@ if __name__ == "__main__":
             "yellow",
         )
     )
+
+    db_user, db_password, db_host, db_name = None, None, None, None
+    auth, db_user, db_password, db_host, db_name = validate_db_creds()
+    if auth is False:
+        print(colored("Incorrect database credentials", "red"))
+        sys.exit(1)
+
     etl_name = questionary.select(
         "Select FSGP ETL operation",
         choices=[
@@ -139,12 +164,6 @@ if __name__ == "__main__":
             "drop_tables",
         ],
     ).ask()
-
-    db_user, db_password, db_host, db_name = None, None, None, None
-    # auth, db_user, db_password, db_host, db_name = validate_db_creds()
-    # if auth is False:
-    #     print(colored("Incorrect database credentials", "red"))
-    #     sys.exit(1)
 
     if etl_name == "routemodel":
         route_model(db_user, db_password, db_host, db_name)
